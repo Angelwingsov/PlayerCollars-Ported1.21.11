@@ -7,13 +7,12 @@ import com.mojang.serialization.codecs.EitherCodec;
 import com.mojang.serialization.codecs.ListCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.wispforest.accessories.api.AccessoriesCapability;
-import io.wispforest.accessories.api.AccessoryRegistry;
+import io.wispforest.accessories.api.core.AccessoryRegistry;
 import io.wispforest.accessories.api.slot.SlotEntryReference;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.gamerule.v1.GameRuleFactory;
-import net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry;
+import net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -53,8 +52,10 @@ import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import net.minecraft.world.rule.GameRule;
+import net.minecraft.world.rule.GameRuleCategory;
+import net.minecraft.world.rule.GameRules;
 import org.jetbrains.annotations.Nullable;
 import org.jlortiz.playercollars.block.DogBedBlock;
 import org.jlortiz.playercollars.block.DogBowlBlock;
@@ -129,14 +130,14 @@ public class PlayerCollarsMod implements ModInitializer {
 			Registries.ATTRIBUTE, Identifier.of(MOD_ID, "leash_distance"),
 			new ClampedEntityAttribute("attribute.playercollars.leash_distance", 4, 2, 16));
 
-	public static final GameRules.Key<GameRules.BooleanRule> PLAYER_LEASHES_BREAK_RULE = GameRuleRegistry.register(
-			"playerLeashesBreak", GameRules.Category.PLAYER, GameRuleFactory.createBooleanRule(true));
-    public static final GameRules.Key<GameRules.BooleanRule> LEASHED_PLAYERS_RIDE_ENTITIES = GameRuleRegistry.register(
-            "leashedPlayersRideEntities", GameRules.Category.PLAYER, GameRuleFactory.createBooleanRule(false));
-	public static final GameRules.Key<GameRules.BooleanRule> ALLOW_ATTACK_OWNER = GameRuleRegistry.register(
-			"playerAllowAttackOwner", GameRules.Category.PLAYER, GameRuleFactory.createBooleanRule(false));
-	public static final GameRules.Key<GameRules.BooleanRule> ALLOW_UNLEASH_OTHER = GameRuleRegistry.register(
-			"allowUnleashUnownedPlayer", GameRules.Category.PLAYER, GameRuleFactory.createBooleanRule(true));
+	public static final GameRule<Boolean> PLAYER_LEASHES_BREAK_RULE = GameRuleBuilder.forBoolean(true)
+            .category(GameRuleCategory.PLAYER).buildAndRegister(Identifier.of(MOD_ID, "player_leashes_break"));
+    public static final GameRule<Boolean> LEASHED_PLAYERS_RIDE_ENTITIES = GameRuleBuilder.forBoolean(false)
+            .category(GameRuleCategory.PLAYER).buildAndRegister(Identifier.of(MOD_ID, "leashed_players_ride_entities"));
+	public static final GameRule<Boolean> ALLOW_ATTACK_OWNER = GameRuleBuilder.forBoolean(false)
+            .category(GameRuleCategory.PLAYER).buildAndRegister(Identifier.of(MOD_ID, "player_allow_attack_owner"));
+	public static final GameRule<Boolean> ALLOW_UNLEASH_OTHER = GameRuleBuilder.forBoolean(true)
+            .category(GameRuleCategory.PLAYER).buildAndRegister(Identifier.of(MOD_ID, "allow_unleash_unowned_player"));
 
 	public static final DogBedBlock[] DOG_BEDS = new DogBedBlock[DyeColor.values().length];
 	public static final BedItem[] DOG_BED_ITEMS = new BedItem[DyeColor.values().length];
@@ -214,7 +215,7 @@ public class PlayerCollarsMod implements ModInitializer {
 	}
 
 	public static ActionResult pullPlayerTowards(ServerPlayerEntity plr, Vec3d towards, double minDist, double maxDist, UnaryOperator<Double> getFactor) {
-		Vec3d vecTo = towards.subtract(plr.getPos());
+		Vec3d vecTo = towards.subtract(plr.getX(), plr.getY(), plr.getZ());
 		double distance = vecTo.length();
 		if (distance < minDist) return ActionResult.PASS;
 		if (distance > maxDist) return ActionResult.FAIL;
@@ -230,8 +231,9 @@ public class PlayerCollarsMod implements ModInitializer {
 			player.sendMessage(Text.translatable("message.playercollars.no_break_fence").formatted(Formatting.RED), true);
 			return true;
 		}
-		if (!world.getGameRules().getBoolean(ALLOW_UNLEASH_OTHER)) {
-			List<Leashable> list = LeadItem.collectLeashablesAround(world, entity.getBlockPos(), (e) -> entity.equals(e.getLeashHolder()));
+		if (!world.getGameRules().getValue(ALLOW_UNLEASH_OTHER)) {
+			List<Leashable> list = world.getOtherEntities(entity, entity.getBoundingBox().expand(7.0), (e) -> e instanceof Leashable leashable && entity.equals(leashable.getLeashHolder()))
+                    .stream().map((e) -> (Leashable) e).toList();
 			for (Leashable l : list) {
 				if (!(l instanceof LeashProxyEntity le)) continue;
 				LivingEntity leashTarget = le.getLeashTarget();
@@ -284,7 +286,7 @@ public class PlayerCollarsMod implements ModInitializer {
 		}
 
 		PlayerBlockBreakEvents.BEFORE.register((World var1, PlayerEntity player, BlockPos blockPos, BlockState var4, @Nullable BlockEntity var5) -> {
-			if (var1.isClient) return true;
+			if (var1.isClient()) return true;
 			if (player.isSpectator()) return true;
 			Entity leashHolderEntity = ((LeashImpl) player).leashplayers$getProxyLeashHolder();
 			if (leashHolderEntity instanceof LeashKnotEntity knot && blockPos.equals(knot.getAttachedBlockPos())) {
@@ -295,12 +297,12 @@ public class PlayerCollarsMod implements ModInitializer {
 		});
 
 		AttackEntityCallback.EVENT.register((PlayerEntity player, World world, Hand var3, Entity entity, @Nullable EntityHitResult var5) -> {
-			if (world.isClient) return ActionResult.PASS;
+			if (world.isClient()) return ActionResult.PASS;
 			if (player.isSpectator()) return ActionResult.PASS;
 
 			ServerWorld sworld = (ServerWorld) world;
 			AccessoriesCapability cap = AccessoriesCapability.get(player);
-			if (cap != null && sworld.getGameRules().getBoolean(ALLOW_ATTACK_OWNER)) {
+			if (cap != null && sworld.getGameRules().getValue(ALLOW_ATTACK_OWNER)) {
 				for (SlotEntryReference sr : cap.getEquipped((x) -> x.isIn(PlayerCollarsMod.COLLAR_TAG))) {
 					OwnerComponent owner = sr.stack().get(OWNER_COMPONENT_TYPE);
 					if (owner != null && owner.uuid().equals(entity.getUuid())) {

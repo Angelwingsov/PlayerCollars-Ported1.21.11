@@ -39,16 +39,17 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         super(entityType, world);
     }
 
-    @Redirect(method = "getBlockBreakingSpeed", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerInventory;getBlockBreakingSpeed(Lnet/minecraft/block/BlockState;)F"), require=0)
-    private float getBlockBreakingSpeed(PlayerInventory instance, BlockState block) {
-        float ret = instance.getBlockBreakingSpeed(block);
+    @Inject(method = "getBlockBreakingSpeed", at = @At("RETURN"), cancellable = true, require = 0)
+    private void playercollars$adjustBlockBreakingSpeed(BlockState block, CallbackInfoReturnable<Float> cir) {
+        float ret = cir.getReturnValue();
         AccessoriesCapability cap = AccessoriesCapability.get(this);
-        if (cap == null) return ret;
-        if (cap.getEquipped((x) -> x.isIn(PlayerCollarsMod.PAWS_TAG)).isEmpty()) return ret;
+        if (cap == null) return;
+        if (cap.getEquipped((x) -> x.isIn(PlayerCollarsMod.PAWS_TAG)).isEmpty()) return;
         if (TagUtil.isIn(BlockTags.SHOVEL_MINEABLE, block.getBlock())) {
-            return ToolMaterial.IRON.speed();
+            cir.setReturnValue(ToolMaterial.IRON.speed());
+            return;
         }
-        return (ret - 1) * 0.125f + 1;
+        cir.setReturnValue((ret - 1) * 0.125f + 1);
     }
 
     @Redirect(method="attack", at= @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerEntity;getAttributeValue(Lnet/minecraft/registry/entry/RegistryEntry;)D", ordinal=0), require=0)
@@ -70,7 +71,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         AccessoriesCapability cap = AccessoriesCapability.get(this);
         if (cap == null) return;
         for (SlotEntryReference sr : cap.getEquipped((x) -> x.isIn(PlayerCollarsMod.PAWS_TAG))) {
-            if (PawsItem.shouldDrop(sr.stack(), inventory.getMainHandStack())) {
+            if (PawsItem.shouldDrop(sr.stack(), inventory.getSelectedStack())) {
                 ItemStack stack = inventory.dropSelectedItem(true);
                 if (!stack.isEmpty()) dropItem(stack, true);
             }

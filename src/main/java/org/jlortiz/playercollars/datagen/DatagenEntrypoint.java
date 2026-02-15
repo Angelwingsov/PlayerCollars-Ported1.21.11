@@ -32,8 +32,8 @@ public class DatagenEntrypoint implements DataGeneratorEntrypoint {
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         for (DyeColor c : DyeColor.values()) {
-            WOOLS[c.ordinal()] = (BlockItem) Registries.ITEM.get(Identifier.ofVanilla(c.getName() + "_wool"));
-            TERRACOTTAS[c.ordinal()] = (BlockItem) Registries.ITEM.get(Identifier.ofVanilla(c.getName() + "_terracotta"));
+            WOOLS[c.ordinal()] = (BlockItem) Registries.ITEM.get(Identifier.ofVanilla(c.asString() + "_wool"));
+            TERRACOTTAS[c.ordinal()] = (BlockItem) Registries.ITEM.get(Identifier.ofVanilla(c.asString() + "_terracotta"));
         }
 
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
@@ -67,13 +67,13 @@ public class DatagenEntrypoint implements DataGeneratorEntrypoint {
 
         @Override
         protected void configure(RegistryWrapper.WrapperLookup wrapperLookup) {
-            getOrCreateTagBuilder(ItemTags.DYEABLE).add(PlayerCollarsMod.COLLAR_ITEM).add(PlayerCollarsMod.CLICKER_ITEM).add(PlayerCollarsMod.TAGLESS_COLLAR_ITEM);
-            getOrCreateTagBuilder(TagKey.of(RegistryKeys.ITEM, Identifier.of(Accessories.MODID, "necklace"))).add(PlayerCollarsMod.COLLAR_ITEM).add(PlayerCollarsMod.TAGLESS_COLLAR_ITEM);
-            getOrCreateTagBuilder(TagKey.of(RegistryKeys.ITEM, Identifier.of(Accessories.MODID, "hand"))).add(PlayerCollarsMod.PAWS_ITEMS);
-            getOrCreateTagBuilder(TagKey.of(RegistryKeys.ITEM, Identifier.of(Accessories.MODID, "shoes"))).addTag(PlayerCollarsMod.FOOT_PAWS_TAG);
-            getOrCreateTagBuilder(PlayerCollarsMod.PAWS_TAG).add(PlayerCollarsMod.PAWS_ITEMS);
-            getOrCreateTagBuilder(PlayerCollarsMod.FOOT_PAWS_TAG).add(PlayerCollarsMod.FOOT_PAWS_ITEMS);
-            getOrCreateTagBuilder(PlayerCollarsMod.COLLAR_TAG).add(PlayerCollarsMod.COLLAR_ITEM).add(PlayerCollarsMod.TAGLESS_COLLAR_ITEM)
+            getTagBuilder(ItemTags.DYEABLE).add(PlayerCollarsMod.COLLAR_ITEM).add(PlayerCollarsMod.CLICKER_ITEM).add(PlayerCollarsMod.TAGLESS_COLLAR_ITEM);
+            getTagBuilder(TagKey.of(RegistryKeys.ITEM, Identifier.of(Accessories.MODID, "necklace"))).add(PlayerCollarsMod.COLLAR_ITEM).add(PlayerCollarsMod.TAGLESS_COLLAR_ITEM);
+            getTagBuilder(TagKey.of(RegistryKeys.ITEM, Identifier.of(Accessories.MODID, "hand"))).add(PlayerCollarsMod.PAWS_ITEMS);
+            getTagBuilder(TagKey.of(RegistryKeys.ITEM, Identifier.of(Accessories.MODID, "shoes"))).addTag(PlayerCollarsMod.FOOT_PAWS_TAG);
+            getTagBuilder(PlayerCollarsMod.PAWS_TAG).add(PlayerCollarsMod.PAWS_ITEMS);
+            getTagBuilder(PlayerCollarsMod.FOOT_PAWS_TAG).add(PlayerCollarsMod.FOOT_PAWS_ITEMS);
+            getTagBuilder(PlayerCollarsMod.COLLAR_TAG).add(PlayerCollarsMod.COLLAR_ITEM).add(PlayerCollarsMod.TAGLESS_COLLAR_ITEM)
                     .addOptionalTag(TagKey.of(RegistryKeys.ITEM, Identifier.of("petworks", "collars")));
         }
     }
@@ -85,11 +85,11 @@ public class DatagenEntrypoint implements DataGeneratorEntrypoint {
 
         @Override
         protected void configure(RegistryWrapper.WrapperLookup wrapperLookup) {
-            getOrCreateTagBuilder(BlockTags.BEDS).add(PlayerCollarsMod.DOG_BEDS);
+            getTagBuilder(BlockTags.BEDS).add(PlayerCollarsMod.DOG_BEDS);
 //            getOrCreateTagBuilder(PlayerCollarsMod.PAWS_ALLOW_INTERACT).addTag(BlockTags.BUTTONS)
 //                    .add(Blocks.LEVER).addTag(BlockTags.CROPS).addTag(BlockTags.BEDS)
 //                    .addTag(BlockTags.GEODE_INVALID_BLOCKS).addTag(BlockTags.CAULDRONS);
-            getOrCreateTagBuilder(BlockTags.FENCES).add(PlayerCollarsMod.INVISIBLE_FENCE_BLOCK);
+            getTagBuilder(BlockTags.FENCES).add(PlayerCollarsMod.INVISIBLE_FENCE_BLOCK);
         }
     }
 
@@ -116,7 +116,7 @@ public class DatagenEntrypoint implements DataGeneratorEntrypoint {
 
         private static void generateColorNames(TranslationBuilder translationBuilder, String suffix, Function<Integer, DyeColor> getColor, String... keys) {
             for (int i = 0; i < keys.length; i++) {
-                String pre = getColor.apply(i).getName();
+                String pre = getColor.apply(i).asString();
                 char []buf = new char[pre.length() + suffix.length()];
                 boolean newWord = true;
                 for (int j = 0; j < pre.length(); j++) {

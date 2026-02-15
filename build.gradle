@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.9-SNAPSHOT'
+    id 'fabric-loom' version '1.14.10'
     id 'maven-publish'
 }
 
@@ -42,7 +42,7 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    modImplementation("io.wispforest:accessories-fabric:1.2.16-beta+1.21.4")
+    modImplementation("io.wispforest:accessories-fabric:1.4.3-beta+1.21.10")
 }
 
 processResources {
@@ -81,6 +81,7 @@ loom {
 
 tasks.withType(JavaCompile).configureEach {
     it.options.release = 21
+    it.exclude('org/jlortiz/playercollars/datagen/**')
 }
 
 java {

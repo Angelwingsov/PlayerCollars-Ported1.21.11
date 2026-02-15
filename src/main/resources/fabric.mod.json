@@ -29,9 +29,6 @@
     ],
     "client": [
       "org.jlortiz.playercollars.client.RegisterClient"
-    ],
-    "fabric-datagen": [
-      "org.jlortiz.playercollars.datagen.DatagenEntrypoint"
     ]
   },
   "mixins": [
@@ -40,10 +37,11 @@
   ],
   "accessWidener" : "playercollars.accesswidener",
   "depends": {
-    "fabricloader": ">=0.15.10",
-    "minecraft": ">=1.21.2",
-    "java": ">=17",
+    "fabricloader": ">=0.18.0",
+    "minecraft": ">=1.21.11",
+    "java": ">=21",
     "fabric-api": "*",
-    "accessories": ">=1.2.0"
+    "accessories": ">=1.4.0",
+    "owo": ">=0.12.24 <0.13.0"
   }
 }

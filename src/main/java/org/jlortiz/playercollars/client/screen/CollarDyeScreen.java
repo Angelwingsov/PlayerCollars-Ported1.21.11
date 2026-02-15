@@ -40,7 +40,7 @@ public class CollarDyeScreen extends Screen {
         int x = this.width / 2;
         int y = this.height / 2 - 30;
 
-        TextFieldWidget dyeField = new TextFieldWidget(this.textRenderer, x - 30, shouldPaw ? y : y + 25, 100, 20, Text.empty());
+        TextFieldWidget dyeField = new TextFieldWidget(this.textRenderer, x - 30, shouldPaw ? y : y + 25, 100, 20, Text.literal(""));
         dyeField.setMaxLength(6);
         dyeField.setChangedListener((s) -> updateTextField(false, s));
         dyeField.setTextPredicate((s) -> {
@@ -55,7 +55,7 @@ public class CollarDyeScreen extends Screen {
         this.addDrawableChild(dyeField);
 
         if (shouldPaw) {
-            TextFieldWidget pawField = new TextFieldWidget(this.textRenderer, x - 30, y + 25, 100, 20, Text.empty());
+            TextFieldWidget pawField = new TextFieldWidget(this.textRenderer, x - 30, y + 25, 100, 20, Text.literal(""));
             pawField.setMaxLength(6);
             pawField.setChangedListener((s) -> updateTextField(true, s));
             pawField.setTextPredicate((s) -> {
@@ -76,12 +76,12 @@ public class CollarDyeScreen extends Screen {
             close();
         }).dimensions(x + 5, y + 50, 75, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.cancel"), (btn) -> {
-            is.set(DataComponentTypes.DYED_COLOR, new DyedColorComponent(initColor, true));
+            is.set(DataComponentTypes.DYED_COLOR, new DyedColorComponent(initColor));
             is.set(DataComponentTypes.MAP_COLOR, new MapColorComponent(initPaw));
             close();
         }).dimensions(x - 80, y + 50, 75, 20).build());
 
-        ButtonWidget ownerButton = ButtonWidget.builder(Text.empty(), this::updateOwner).dimensions(x - 80, y + 72, 160, 20).build();
+        ButtonWidget ownerButton = ButtonWidget.builder(Text.literal(""), this::updateOwner).dimensions(x - 80, y + 72, 160, 20).build();
         if (owner == null) {
             ownerButton.setMessage(Text.translatable("item.playercollars.collar.become_owner"));
         } else if (owner.uuid().equals(ownUUID) && owner.owned().isEmpty()) {
@@ -95,7 +95,7 @@ public class CollarDyeScreen extends Screen {
 
     private void updateOwner(ButtonWidget btn) {
         if (owner == null) {
-            owner = new OwnerComponent(ownUUID, MinecraftClient.getInstance().getGameProfile().getName());
+            owner = new OwnerComponent(ownUUID, MinecraftClient.getInstance().getGameProfile().name());
             btn.setMessage(Text.translatable("item.playercollars.collar.remove_owner"));
         } else {
             owner = null;
@@ -113,7 +113,7 @@ public class CollarDyeScreen extends Screen {
         if (paw) {
             is.set(DataComponentTypes.MAP_COLOR, new MapColorComponent(col));
         } else {
-            is.set(DataComponentTypes.DYED_COLOR, new DyedColorComponent(col, true));
+            is.set(DataComponentTypes.DYED_COLOR, new DyedColorComponent(col));
         }
     }
 

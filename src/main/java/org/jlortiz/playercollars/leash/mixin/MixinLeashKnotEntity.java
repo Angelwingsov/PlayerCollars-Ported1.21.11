@@ -22,7 +22,7 @@ public abstract class MixinLeashKnotEntity extends BlockAttachedEntity {
 
     @Inject(method = "interact", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/decoration/LeashKnotEntity;discard()V"), cancellable = true)
     private void preventBreakKnot(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
-        World world = getWorld();
+        World world = getEntityWorld();
         if (!world.isClient() && PlayerCollarsMod.blockLeashKnotBreak((ServerWorld) world, player, (LeashKnotEntity) (Object) this)) {
             cir.setReturnValue(ActionResult.PASS);
         }
